@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitlab
+  namespace: jenkins
+spec:
+  replicas: 1	#指定Pod副本数
+  selector:		#指定Pod的选择器
+    matchLabels:
+      app: gitlab
+  template:
+    metadata:
+      labels:	#给Pod打label
+        app: gitlab
+    spec:
+      volumes: 
+      - name: gitlab-config
+        hostPath: 
+          path: /opt/gitlab/config
+      - name: gitlab-data
+        hostPath: 
+          path: /opt/gitlab/data
+      nodeSelector:   # 使用节点选择器将Pod调度到指定label的节点
+        gitlab: "true"
+      containers:
+      - name: gitlab
+        image: gitlab/gitlab-ce:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 80
+        volumeMounts:
+        - name: gitlab-data
+          mountPath: /var/opt/gitlab
+        volumeMounts:
+        - name: gitlab-config
+          mountPath: /etc/gitlab
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab
+  namespace: jenkins
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: gitlab
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: gitlab
+  namespace: jenkins
+spec:
+  rules:
+  - host: gitlab.devops.cn
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: gitlab
+          servicePort: 80
