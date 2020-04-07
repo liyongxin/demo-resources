@@ -1,0 +1,6 @@
+requests==2.19.1
+PyMySQL
+robotframework
+robotframework-seleniumlibrary
+robotframework-databaselibrary
+robotframework-requests
